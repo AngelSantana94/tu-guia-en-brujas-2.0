@@ -6,10 +6,5 @@
 @use "base/helpers";
 @use "base/typography";
 
-// 3. Layout-related sections
-@use "layout/offers";
-@use "layout/faq";
-@use "layout/tours-cta";
-
 // 6. Themes
 @use "themes/default";
