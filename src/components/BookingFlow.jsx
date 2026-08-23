@@ -1,12 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../lib/supabaseClient";
 import banderaEspana from "../assets/espana.png";
-import logoTuguiaenbrujas from "../assets/logo-header-01.png";
-import PhoneStep from "./PhoneStep";
-import CityStep from "./CityStep";
-import SuccessStep from "./SuccessStep";
-import { createPortal } from "react-dom";
-import TermsStep from "./TermsStep";
 
 const DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
 const MESES = [
@@ -24,6 +19,7 @@ const MESES = [
   "Diciembre",
 ];
 const MESES_A_MOSTRAR = 6;
+const MAX_PERSONAS_POR_GUIA = 20;
 
 function toISODate(date) {
   const y = date.getFullYear();
@@ -45,62 +41,94 @@ function buildMonthGrid(year, month) {
   return cells;
 }
 
-export default function BookingFlow({ tour, onBooked, size = "sm" }) {
-  const btnSize = size === "lg" ? "btn-lg" : "btn-sm";
+export default function EditBookingModal({
+  booking,
+  isOpen,
+  onClose,
+  onUpdated,
+}) {
+  const [numAdults, setNumAdults] = useState(booking?.num_adults || 1);
+  const [numMinors, setNumMinors] = useState(booking?.num_minors || 0);
 
   const [today, setToday] = useState(null);
   const [availability, setAvailability] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [sheetStep, setSheetStep] = useState(null);
-
-  const [numAdults, setNumAdults] = useState(1);
-  const [numMinors, setNumMinors] = useState(0);
-  const [customerName, setCustomerName] = useState("");
-  const [email, setEmail] = useState("");
-
-  const [phone, setPhone] = useState("");
-  const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(
+    booking?.booking_date || null,
+  );
+  const [selectedSlot, setSelectedSlot] = useState(
+    booking
+      ? { schedule_id: booking.schedule_id, booking_time: booking.booking_time }
+      : null,
+  );
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [horariosOpen, setHorariosOpen] = useState(false);
 
-  const [serverOffsetMs, setServerOffsetMs] = useState(0);
-  const [nowTick, setNowTick] = useState(0);
+  const tourId =
+    booking?.tour_id ??
+    booking?.tourId ??
+    booking?.tour?.id ??
+    booking?.tours?.id ??
+    null;
 
-  // Calcula el desfase entre el reloj del servidor y el del dispositivo, una sola vez
+  const [tourName, setTourName] = useState(null);
+  const [tourSlug, setTourSlug] = useState(null);
+
   useEffect(() => {
-    supabase.rpc("get_server_now").then(({ data, error }) => {
-      if (!error && data) {
-        const serverTime = new Date(data).getTime();
-        setServerOffsetMs(serverTime - Date.now());
-      }
+    if (!isOpen || !tourId) return;
+
+    supabase
+      .from("tours")
+      .select("name, slug")
+      .eq("id", tourId)
+      .single()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(
+            "[EditBookingModal] error al obtener datos del tour:",
+            error,
+          );
+          setTourName(null);
+          setTourSlug(null);
+        } else {
+          setTourName(data?.name || null);
+          setTourSlug(data?.slug || null);
+        }
+      });
+  }, [isOpen, tourId]);
+
+  const totalPersonas = numAdults + numMinors;
+  const requierePrepago = tourSlug === "free-tour-brujas" && totalPersonas >= 5;
+
+  const originalTotalPersonas =
+    (booking?.num_adults || 0) + (booking?.num_minors || 0);
+
+  useEffect(() => {
+    if (!isOpen || !booking) return;
+
+    setNumAdults(booking.num_adults || 1);
+    setNumMinors(booking.num_minors || 0);
+    setSelectedDate(booking.booking_date || null);
+    setSelectedSlot({
+      schedule_id: booking.schedule_id,
+      booking_time: booking.booking_time,
     });
-  }, []);
-
-  // Refresca la comprobación cada 30s para que los horarios se cierren solos
-  // sin que el usuario tenga que recargar la página
-  useEffect(() => {
-    const interval = setInterval(() => setNowTick((t) => t + 1), 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  function getServerNow(offsetMs) {
-    return new Date(Date.now() + offsetMs);
-  }
+    setError(null);
+  }, [isOpen, booking]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     supabase.rpc("get_server_today").then(({ data, error }) => {
       if (error) {
-        setError("No se pudo obtener la fecha del servidor");
-        setLoading(false);
-        return;
+        setToday(new Date());
+      } else {
+        setToday(new Date(`${data}T00:00:00`));
       }
-      setToday(new Date(`${data}T00:00:00`));
     });
-  }, []);
+  }, [isOpen]);
 
   const monthsList = useMemo(() => {
     if (!today) return [];
@@ -111,149 +139,165 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
   }, [today]);
 
   useEffect(() => {
-    if (!today || !tour || monthsList.length === 0) return;
+    if (!isOpen || !today || monthsList.length === 0) return;
+
+    if (!tourId) {
+      console.warn(
+        "[EditBookingModal] No se encontró tour_id en el objeto booking:",
+        booking,
+      );
+      setError(
+        "No se pudo determinar el tour de esta reserva (falta tour_id).",
+      );
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+    setError(null);
     const last = monthsList[monthsList.length - 1];
     const end = new Date(last.year, last.month + 1, 0);
 
     supabase
       .rpc("get_availability", {
-        p_tour_id: tour.id,
+        p_tour_id: tourId,
         p_start_date: toISODate(today),
         p_end_date: toISODate(end),
       })
       .then(({ data, error }) => {
-        if (error) setError("No se pudo cargar la disponibilidad");
-        else setAvailability(data || []);
+        if (error) {
+          console.error("[EditBookingModal] get_availability error:", error);
+          setError("No se pudo cargar la disponibilidad");
+        } else {
+          setAvailability(data || []);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("[EditBookingModal] get_availability excepción:", err);
+        setError("No se pudo cargar la disponibilidad");
         setLoading(false);
       });
-  }, [today, tour, monthsList]);
+  }, [isOpen, today, tourId, monthsList]);
 
   const slotsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
+    return availability.filter((a) => a.booking_date === selectedDate);
+  }, [availability, selectedDate]);
 
-    const todayISO = today ? toISODate(today) : null;
-    const isSelectedToday = selectedDate === todayISO;
-    const now = getServerNow(serverOffsetMs);
+  const currentSlotData = useMemo(() => {
+    if (!selectedSlot || !selectedDate) return null;
+    return (
+      availability.find(
+        (a) =>
+          a.schedule_id === selectedSlot.schedule_id &&
+          a.booking_date === selectedDate,
+      ) || null
+    );
+  }, [availability, selectedSlot, selectedDate]);
 
-    return availability
-      .filter((a) => a.booking_date === selectedDate)
-      .map((slot) => {
-        let isPast = false;
-        if (isSelectedToday) {
-          const [h, m] = slot.booking_time.split(":").map(Number);
-          const slotDateTime = new Date(now);
-          slotDateTime.setHours(h, m, 0, 0);
-          isPast = slotDateTime <= now;
-        }
-        return { ...slot, isPast };
-      });
-  }, [availability, selectedDate, today, serverOffsetMs, nowTick]);
+  const isSameSlotAsOriginal =
+    !!booking &&
+    selectedSlot?.schedule_id === booking.schedule_id &&
+    selectedDate === booking.booking_date;
 
-  function handleSelectDate(date) {
+  const maxPlazas = useMemo(() => {
+    const baseRemaining =
+      currentSlotData?.remaining ??
+      currentSlotData?.available_spots ??
+      MAX_PERSONAS_POR_GUIA;
+
+    const adjusted = isSameSlotAsOriginal
+      ? baseRemaining + originalTotalPersonas
+      : baseRemaining;
+
+    return Math.min(MAX_PERSONAS_POR_GUIA, adjusted);
+  }, [currentSlotData, isSameSlotAsOriginal, originalTotalPersonas]);
+
+  const isChanged = useMemo(() => {
+    if (!booking) return false;
+
+    const adultsChanged = numAdults !== booking.num_adults;
+    const minorsChanged = numMinors !== (booking.num_minors || 0);
+    const dateChanged = selectedDate !== booking.booking_date;
+    const timeChanged = selectedSlot?.booking_time !== booking.booking_time;
+
+    return adultsChanged || minorsChanged || dateChanged || timeChanged;
+  }, [numAdults, numMinors, selectedDate, selectedSlot, booking]);
+
+  const handleSelectDate = (date) => {
     if (!date || date < today) return;
     setSelectedDate(toISODate(date));
     setSelectedSlot(null);
-    setSheetStep("horarios");
-  }
+    setHorariosOpen(true);
+  };
 
-  function handleSelectSlot(slot) {
+  const handleSelectSlot = (slot) => {
     setSelectedSlot(slot);
-    setSheetStep("personas");
-  }
+    setHorariosOpen(false);
+  };
 
-  function handleContinueToDatos() {
-    setSheetStep("datos");
-  }
-
-  function handleBack() {
-    if (sheetStep === "datos") {
-      setSheetStep("personas");
-    } else if (sheetStep === "personas") {
-      setSheetStep("horarios");
-      setSelectedSlot(null);
-    } else {
-      closeSheet();
-    }
-  }
-
-  function closeSheet() {
-    setSheetStep(null);
-    setSelectedSlot(null);
-  }
-
-  const formatSelectedDate = (dateStr) => {
-    if (!dateStr) return "Fecha seleccionada";
-
-    const parts = dateStr.split("-");
-    if (parts.length !== 3) return "Fecha seleccionada";
-
-    const [year, month, day] = parts;
+  const formatFechaLegible = (dateStr) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
     const monthIndex = parseInt(month, 10) - 1;
-    const monthName = MESES[monthIndex] || "mes";
-
-    return `${parseInt(day, 10)} de ${monthName} de ${year}`;
+    return `${parseInt(day, 10)} de ${MESES[monthIndex]}`;
   };
 
-  const handleNextToPhone = () => {
-    if (
-      !customerName.trim() ||
-      !/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(customerName.trim())
-    ) {
+  // ✅ Handler unificado y acoplado directamente al botón final
+  const handleConfirmChanges = async () => {
+    if (!booking) return;
+
+    if (!selectedSlot) {
+      setError("Por favor, selecciona un horario.");
+      return;
+    }
+
+    if (totalPersonas > maxPlazas) {
       setError(
-        "Introduce nombre y apellidos válidos, sin números ni caracteres especiales.",
+        `Solo quedan ${maxPlazas} plazas disponibles para este horario.`,
       );
       return;
     }
 
-    if (
-      !email.trim() ||
-      !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())
-    ) {
-      setError(
-        "Introduce un correo electrónico válido sin caracteres especiales.",
-      );
-      return;
-    }
-
-    setError(null);
-    setSheetStep("phone");
-  };
-
-  async function handleConfirm(finalCityValue) {
     setSubmitting(true);
     setError(null);
 
-    setSheetStep("procesando");
-
-    const { data, error } = await supabase.rpc("create_booking", {
-      p_tour_id: tour.id,
+    const { data, error } = await supabase.rpc("update_booking", {
+      p_booking_id: booking.id,
       p_schedule_id: selectedSlot.schedule_id,
       p_booking_date: selectedDate,
       p_booking_time: selectedSlot.booking_time,
-      p_customer_name: customerName,
-      p_email: email,
-      p_phone: phone || null,
       p_num_adults: numAdults,
       p_num_minors: numMinors,
-      p_notes: finalCityValue || null,
     });
 
     if (error) {
-      console.error("Error al guardar la reserva:", error.message);
-      // Aquí manejas el estado de error de tu interfaz si aplica
+      console.error("[EditBookingModal] update_booking error:", error);
+      setError("Ha ocurrido un error al modificar la reserva");
+      setSubmitting(false);
       return;
     }
 
-    // 📩 Invocar la Edge Function para enviar los correos
+    if (!data?.success) {
+      setError(
+        data?.error === "sin_cupo"
+          ? `Solo quedan ${data.remaining} plazas, por favor ajusta la cantidad.`
+          : data?.message || "No se pudo completar la reserva",
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    // 📩 Invocar la Edge Function para enviar el email de edición
     await supabase.functions.invoke("send-booking-email", {
       body: {
+        action: "EDITED",
         record: {
-          tour_name: tour.name,
-          customer_name: customerName,
-          email: email,
-          phone: phone || null,
-          notes: finalCityValue || null,
+          tour_name: tourName,
+          customer_name: booking.customer_name,
+          email: booking.email,
+          phone: booking.phone || null,
           booking_date: selectedDate,
           booking_time: selectedSlot.booking_time,
           num_adults: numAdults,
@@ -264,554 +308,339 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
 
     setSubmitting(false);
 
-    if (error) {
-      setError("Ha ocurrido un error, inténtalo de nuevo");
-      setSheetStep("city");
-      return;
+    if (onUpdated) {
+      onUpdated({
+        ...data,
+        id: booking.id,
+        schedule_id: selectedSlot.schedule_id,
+        booking_date: selectedDate,
+        booking_time: selectedSlot.booking_time,
+        num_adults: numAdults,
+        num_minors: numMinors,
+      });
     }
+    onClose();
+  };
 
-    if (!data.success) {
-      setError(
-        data.error === "sin_cupo"
-          ? `Solo quedan ${data.remaining} plazas, por favor ajusta la cantidad.`
-          : "No se pudo completar la reserva",
-      );
-      setSheetStep(data.error === "sin_cupo" ? "personas" : "city");
-      return;
-    }
+  if (!isOpen || !booking) return null;
 
-    setSuccess(data);
-    setSheetStep("exito");
-  }
-
-  if (loading && !today) {
-    return (
-      <p className="text-sm text-base-content/60 p-4">
-        Cargando disponibilidad...
-      </p>
-    );
-  }
-  if (error && !today) {
-    return <p className="text-sm text-error p-4">{error}</p>;
-  }
-
-  let sheetTitle = "";
-  if (sheetStep === "horarios") {
-    sheetTitle = `Horarios el ${selectedDate?.split("-").reverse().slice(0, 2).join("/")}`;
-  } else if (sheetStep === "personas") {
-    sheetTitle = "¿Cuántos sois?";
-  } else if (sheetStep === "datos") {
-    sheetTitle = "Tus datos";
-  }
-
-  return (
-    <div className="relative flex flex-col w-full h-full bg-base-100">
-      <div className="overflow-y-auto overscroll-contain flex-1 px-4 pb-24">
-        <div className="sticky top-0 bg-base-100/95 backdrop-blur-sm grid grid-cols-7 text-center text-xs font-bold text-base-content/60 py-3 z-10 border-b border-base-200">
-          {DIAS.map((d) => (
-            <span key={d}>{d}</span>
-          ))}
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-4"
+      data-theme="light"
+    >
+      <div className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg bg-base-100 rounded-none md:rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        {/* Cabecera */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn btn-ghost btn-circle btn-sm bg-base-200/60"
+            aria-label="Cerrar"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+          <span className="font-bold text-lg">Editar reserva</span>
+          <div className="w-8" />
         </div>
 
-        {monthsList.map(({ year, month }) => (
-          <div key={`${year}-${month}`} className="mb-6">
-            <p className="font-extrabold text-lg mt-6 mb-3 capitalize text-neutral">
-              {MESES[month]}{" "}
-              <span className="font-normal text-base-content/40">{year}</span>
-            </p>
-            <div className="grid grid-cols-7 gap-2">
-              {buildMonthGrid(year, month).map((date, i) => {
-                if (!date) return <span key={i} />;
-                const iso = toISODate(date);
-                const isPast = date < today;
-                const isSelected = iso === selectedDate;
+        {/* Cuerpos del Modal */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          {error && (
+            <div className="p-3 bg-error/10 border border-error/30 rounded-xl text-error text-sm font-medium text-center">
+              {error}
+            </div>
+          )}
 
-                return (
+          {/* SECCIÓN 1: PERSONAS */}
+          <section className="space-y-4">
+            <h3 className="text-xl font-extrabold text-base-content">
+              Cambia el número de personas
+            </h3>
+
+            <div className="bg-base-200/40 p-4 rounded-2xl space-y-4">
+              {/* Adultos */}
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-base-content">Adultos</span>
+                <div className="flex items-center gap-4">
                   <button
                     type="button"
-                    key={iso}
-                    disabled={isPast}
-                    onClick={() => handleSelectDate(date)}
-                    className={`btn btn-circle w-full aspect-square text-sm ${
-                      isSelected
-                        ? "btn-neutral shadow-lg scale-105"
-                        : "btn-ghost hover:bg-base-200"
-                    } ${isPast ? "btn-disabled opacity-20" : ""}`}
+                    className="btn btn-circle btn-sm bg-base-100 border border-base-300 shadow-sm disabled:opacity-30"
+                    onClick={() => setNumAdults((n) => Math.max(1, n - 1))}
+                    disabled={numAdults <= 1}
                   >
-                    {date.getDate()}
+                    −
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {sheetStep && (
-        <div
-          className="absolute inset-0 bg-black/40 z-10 backdrop-blur-[2px]"
-          onClick={closeSheet}
-        />
-      )}
-
-      {sheetStep && (
-        <div
-          className={`absolute inset-x-0 bottom-0 z-20 w-full bg-base-100 rounded-t-3xl shadow-[0_-15px_40px_rgba(0,0,0,0.15)] flex flex-col transition-all duration-300 ${
-            sheetStep === "horarios" ? "h-auto" : "h-auto max-h-[75vh]"
-          }`}
-        >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-base-200 shrink-0">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="btn btn-ghost btn-circle btn-sm"
-              aria-label="Atrás"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-
-            <span className="font-bold text-lg">{sheetTitle}</span>
-
-            <button
-              type="button"
-              onClick={closeSheet}
-              className="btn btn-ghost btn-circle btn-sm bg-base-200"
-              aria-label="Cerrar"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div className="p-5 overflow-y-auto overscroll-contain flex-1 pb-safe">
-            {/* --- PASO 1: HORARIOS --- */}
-            {sheetStep === "horarios" && (
-              <div className="flex flex-col gap-3">
-                {slotsForSelectedDate.length === 0 && (
-                  <p className="text-center text-base-content/50 py-10">
-                    No hay horarios disponibles para este día.
-                  </p>
-                )}
-                {slotsForSelectedDate.map((slot) => {
-                  const sinCupo = slot.remaining <= 0;
-                  const noDisponible = sinCupo || slot.isPast;
-                  const isSelected =
-                    selectedSlot?.schedule_id === slot.schedule_id;
-                  return (
-                    <button
-                      type="button"
-                      key={slot.schedule_id}
-                      disabled={noDisponible}
-                      onClick={() => handleSelectSlot(slot)}
-                      className={`btn ${btnSize} justify-between px-6 ${
-                        isSelected
-                          ? "btn-neutral shadow-md"
-                          : "btn-outline border-base-300"
-                      } ${noDisponible ? "btn-disabled opacity-40" : ""}`}
-                    >
-                      <span className="flex items-center gap-2 text-lg font-bold">
-                        <img
-                          src={banderaEspana}
-                          alt="Español"
-                          className="w-6 h-6 rounded-full object-cover shrink-0 border border-base-200"
-                        />
-                        {slot.booking_time.slice(0, 5)}
-                      </span>
-
-                      {sinCupo && !slot.isPast && (
-                        <span className="text-xs uppercase tracking-wider text-error">
-                          Agotado
-                        </span>
-                      )}
-                      {slot.isPast && (
-                        <span className="text-xs uppercase tracking-wider text-base-content/40">
-                          Finalizado
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                  <span className="w-4 text-center font-bold text-lg">
+                    {numAdults}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-circle btn-sm bg-base-100 border border-base-300 shadow-sm disabled:opacity-30"
+                    onClick={() => setNumAdults((n) => n + 1)}
+                    disabled={totalPersonas >= maxPlazas}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
+
+              {/* Niños */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-base-content block">
+                    Niños
+                  </span>
+                  <span className="text-xs text-base-content/50">
+                    (hasta 12 años)
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    className="btn btn-circle btn-sm bg-base-100 border border-base-300 shadow-sm disabled:opacity-30"
+                    onClick={() => setNumMinors((n) => Math.max(0, n - 1))}
+                    disabled={numMinors <= 0}
+                  >
+                    −
+                  </button>
+                  <span className="w-4 text-center font-bold text-lg">
+                    {numMinors}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-circle btn-sm bg-base-100 border border-base-300 shadow-sm disabled:opacity-30"
+                    onClick={() => setNumMinors((n) => n + 1)}
+                    disabled={totalPersonas >= maxPlazas}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {selectedSlot && (
+              <p className="text-xs text-base-content/60 text-center">
+                Quedan disponibles {maxPlazas} plazas para este horario. Total
+                seleccionado: <span className="font-bold">{totalPersonas}</span>
+              </p>
             )}
 
-            {/* --- PASO 2: PERSONAS --- */}
-            {sheetStep === "personas" &&
-              (() => {
-                const maxPlazas = Math.min(
-                  20,
-                  selectedSlot?.remaining ??
-                    selectedSlot?.available_spots ??
-                    20,
-                );
-                const totalPersonas = numAdults + numMinors;
-                const requierePrepago =
-                  tour?.slug === "free-tour-brujas" && totalPersonas >= 5;
+            {requierePrepago && (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-1">
+                <p className="font-bold">
+                  ⚠️ Aviso para grupos reducidos (5+ personas)
+                </p>
+                <p>
+                  Al ser un grupo de 5 o más asistentes (incluyendo niños), se
+                  requiere un prepago de <strong>15€ por persona</strong> que
+                  deberá abonarse al guía antes de comenzar el tour.
+                </p>
+              </div>
+            )}
+          </section>
 
-                return (
-                  <div className="space-y-5">
-                    {error && (
-                      <div className="p-3 bg-error/10 border border-error/30 rounded-xl text-error text-sm font-medium text-center">
-                        {error}
-                      </div>
-                    )}
+          <hr className="border-base-200" />
 
-                    <div className="bg-base-200/50 p-4 rounded-2xl space-y-4">
-                      {/* ADULTOS */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">Adultos</span>
-                        <div className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            className="btn btn-circle btn-sm bg-base-100 shadow-sm disabled:opacity-30"
-                            onClick={() =>
-                              setNumAdults((n) => Math.max(1, n - 1))
-                            }
-                            disabled={numAdults <= 1}
-                          >
-                            −
-                          </button>
-                          <span className="w-4 text-center font-bold text-lg">
-                            {numAdults}
-                          </span>
-                          <button
-                            type="button"
-                            className="btn btn-circle btn-sm bg-base-100 shadow-sm disabled:opacity-30"
-                            onClick={() => setNumAdults((n) => n + 1)}
-                            disabled={totalPersonas >= maxPlazas}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
+          {/* SECCIÓN 2: CALENDARIO Y HORARIOS */}
+          <section className="space-y-3">
+            <h3 className="text-xl font-extrabold text-base-content">
+              Elige un nuevo horario
+            </h3>
 
-                      {/* MENORES */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">
-                          Menores{" "}
-                          <span className="text-xs font-normal opacity-60">
-                            (hasta 12 años)
-                          </span>
+            <div className="relative h-[40vh] min-h-[320px] rounded-2xl border border-base-200 overflow-hidden">
+              {loading ? (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-sm text-base-content/60">
+                    Cargando disponibilidad...
+                  </p>
+                </div>
+              ) : (
+                <div className="h-full overflow-y-auto p-4">
+                  <div className="sticky top-0 bg-base-100 grid grid-cols-7 text-center text-xs font-bold text-base-content/60 py-2 border-b border-base-200 z-[1]">
+                    {DIAS.map((d) => (
+                      <span key={d}>{d}</span>
+                    ))}
+                  </div>
+
+                  {monthsList.map(({ year, month }) => (
+                    <div key={`${year}-${month}`} className="mt-4">
+                      <p className="font-extrabold text-base mb-3 capitalize text-neutral">
+                        {MESES[month]}{" "}
+                        <span className="font-normal text-base-content/40">
+                          {year}
                         </span>
-                        <div className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            className="btn btn-circle btn-sm bg-base-100 shadow-sm disabled:opacity-30"
-                            onClick={() =>
-                              setNumMinors((n) => Math.max(0, n - 1))
-                            }
-                            disabled={numMinors <= 0}
-                          >
-                            −
-                          </button>
-                          <span className="w-4 text-center font-bold text-lg">
-                            {numMinors}
-                          </span>
-                          <button
-                            type="button"
-                            className="btn btn-circle btn-sm bg-base-100 shadow-sm disabled:opacity-30"
-                            onClick={() => setNumMinors((n) => n + 1)}
-                            disabled={totalPersonas >= maxPlazas}
-                          >
-                            +
-                          </button>
-                        </div>
+                      </p>
+
+                      <div className="grid grid-cols-7 gap-2">
+                        {buildMonthGrid(year, month).map((date, i) => {
+                          if (!date) return <span key={i} />;
+                          const iso = toISODate(date);
+                          const isPast = date < today;
+                          const isSelected = iso === selectedDate;
+
+                          return (
+                            <button
+                              type="button"
+                              key={iso}
+                              disabled={isPast}
+                              onClick={() => handleSelectDate(date)}
+                              className={`btn btn-circle w-full aspect-square text-sm ${
+                                isSelected
+                                  ? "btn-neutral shadow-lg scale-105 text-white"
+                                  : "btn-ghost hover:bg-base-200"
+                              } ${isPast ? "btn-disabled opacity-20" : ""}`}
+                            >
+                              {date.getDate()}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
 
-                    <p className="text-xs text-base-content/60 text-center">
-                      Quedan disponibles {maxPlazas} plazas. Total seleccionado:{" "}
-                      <span className="font-bold">{totalPersonas}</span>
+              {horariosOpen && selectedDate && (
+                <div className="absolute inset-0 bg-base-100 flex flex-col z-10">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-base-200 shrink-0">
+                    <p className="font-bold text-sm">
+                      Horarios para el {formatFechaLegible(selectedDate)}
                     </p>
-
-                    {/* AVISO PREPAGO DE GRUPOS */}
-                    {requierePrepago && (
-                      <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-1">
-                        <p className="font-bold">
-                          ⚠️ Aviso para grupos reducidos (5+ personas)
-                        </p>
-                        <p>
-                          Al ser un grupo de 5 o más asistentes (incluyendo
-                          niños), se requiere un prepago de{" "}
-                          <strong>15€ por persona</strong> que deberá abonarse
-                          al guía antes de comenzar el tour.
-                        </p>
-                      </div>
-                    )}
-
                     <button
                       type="button"
-                      className="btn btn-neutral btn-lg w-full mt-4 shadow-lg"
-                      onClick={handleContinueToDatos}
-                    >
-                      Continuar
-                    </button>
-                  </div>
-                );
-              })()}
-
-            {/* PASO 3: DATOS VIA PORTAL */}
-            {sheetStep === "datos" &&
-              createPortal(
-                <div
-                  className="fixed inset-0 z-[9999] bg-base-100 flex flex-col w-full h-full overflow-y-auto"
-                  data-theme="light"
-                >
-                  <div className="flex items-center justify-between p-4 shrink-0">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="btn btn-ghost btn-circle btn-sm bg-base-200/50"
-                      aria-label="Atrás"
+                      onClick={() => setHorariosOpen(false)}
+                      className="btn btn-ghost btn-circle btn-xs bg-base-200/60"
+                      aria-label="Volver al calendario"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
+                        className="w-4 h-4"
                         fill="none"
                         viewBox="0 0 24 24"
-                        strokeWidth="2"
                         stroke="currentColor"
-                        className="w-5 h-5"
                       >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                          strokeWidth="2.5"
+                          d="M6 18L18 6M6 6l12 12"
                         />
                       </svg>
                     </button>
-                    <div className="w-8" />
                   </div>
 
-                  <div className="flex-1 w-full max-w-md mx-auto px-6 py-4 flex flex-col">
-                    <img
-                      src={logoTuguiaenbrujas}
-                      alt="Turixe"
-                      className="h-24 object-contain mb-4"
-                    />
-                    <h2 className="text-2xl font-bold text-base-content mb-2">
-                      Completa tu reserva
-                    </h2>
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      {slotsForSelectedDate.length === 0 ? (
+                        <p className="col-span-2 text-sm text-base-content/50 py-2">
+                          No hay plazas para esta fecha.
+                        </p>
+                      ) : (
+                        slotsForSelectedDate.map((slot) => {
+                          const sinCupo = slot.remaining <= 0;
+                          const isSelected =
+                            selectedSlot?.schedule_id === slot.schedule_id;
 
-                    <p className="text-sm text-base-content/60 mb-8 font-medium">
-                      {formatSelectedDate(selectedDate)} ·{" "}
-                      {selectedSlot?.booking_time?.slice(0, 5) ||
-                        "Hora seleccionada"}{" "}
-                      · {numAdults + numMinors} personas
-                    </p>
-
-                    <button
-                      type="button"
-                      className="btn btn-outline border-base-300 hover:bg-base-200 gap-3 w-full bg-white text-black font-medium mb-8 rounded-xl h-12"
-                      onClick={() => console.log("Login con Google")}
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <path
-                          fill="#4285F4"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        />
-                      </svg>
-                      Continuar con Google
-                    </button>
-
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="h-[1px] flex-1 bg-base-200" />
-                      <span className="text-xs text-base-content/40 font-medium">
-                        o
-                      </span>
-                      <div className="h-[1px] flex-1 bg-base-200" />
-                    </div>
-
-                    <div className="flex flex-col gap-5">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          id="floating_name"
-                          className={`block px-4 pb-2.5 pt-6 w-full text-base bg-base-100 rounded-xl border-2 appearance-none focus:outline-none focus:ring-0 peer transition-colors ${
-                            error
-                              ? "border-error focus:border-error text-error"
-                              : "border-base-200 focus:border-neutral text-base-content"
-                          }`}
-                          placeholder=" "
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                        />
-                        <label
-                          htmlFor="floating_name"
-                          className={`absolute text-base duration-300 transform -translate-y-3 scale-75 top-4 z-10 origin-[0] bg-base-100 px-1 peer-focus:px-1 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-4 peer-focus:scale-75 peer-focus:-translate-y-3 start-3 cursor-text ${
-                            error
-                              ? "text-error"
-                              : "text-base-content/60 peer-focus:text-neutral"
-                          }`}
-                        >
-                          Nombre y apellidos
-                        </label>
-                      </div>
-
-                      {error && (
-                        <p className="text-sm text-error mt-[-10px]">{error}</p>
+                          return (
+                            <button
+                              type="button"
+                              key={slot.schedule_id}
+                              disabled={sinCupo}
+                              onClick={() => handleSelectSlot(slot)}
+                              className={`btn btn-md justify-start gap-3 px-4 rounded-xl border ${
+                                isSelected
+                                  ? "btn-neutral shadow-md text-white"
+                                  : "btn-outline border-base-300"
+                              } ${sinCupo ? "btn-disabled opacity-40" : ""}`}
+                            >
+                              <img
+                                src={banderaEspana}
+                                alt="Español"
+                                className="w-5 h-5 rounded-full object-cover shrink-0 border border-base-200"
+                              />
+                              <span className="font-bold text-base">
+                                {slot.booking_time.slice(0, 5)}
+                              </span>
+                            </button>
+                          );
+                        })
                       )}
-
-                      <div className="relative">
-                        <input
-                          type="email"
-                          id="floating_email"
-                          className="block px-4 pb-2.5 pt-6 w-full text-base bg-base-100 rounded-xl border-2 border-base-200 appearance-none focus:outline-none focus:ring-0 focus:border-neutral peer transition-colors text-base-content"
-                          placeholder=" "
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                        <label
-                          htmlFor="floating_email"
-                          className="absolute text-base text-base-content/60 duration-300 transform -translate-y-3 scale-75 top-4 z-10 origin-[0] bg-base-100 px-1 peer-focus:px-1 peer-focus:text-neutral peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-4 peer-focus:scale-75 peer-focus:-translate-y-3 start-3 cursor-text"
-                        >
-                          Correo electrónico
-                        </label>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="btn btn-neutral btn-lg w-full mt-2 rounded-xl text-white font-medium"
-                        disabled={submitting || !customerName || !email}
-                        onClick={handleNextToPhone}
-                      >
-                        {submitting ? (
-                          <span className="loading loading-spinner" />
-                        ) : (
-                          "Reservar con email"
-                        )}
-                      </button>
-
-                      <p className="text-sm text-base-content/60 text-center mt-2">
-                        Puedes cancelar cuando quieras
-                      </p>
                     </div>
                   </div>
-                </div>,
-                document.body,
+                </div>
               )}
+            </div>
 
-            {/* --- PASO 4: TELÉFONO (vía Portal) --- */}
-            {sheetStep === "phone" &&
-              createPortal(
-                <PhoneStep
-                  onNext={(phoneNumber) => {
-                    setPhone(phoneNumber);
-                    setSheetStep("city");
-                  }}
-                  onBack={() => setSheetStep("datos")}
-                />,
-                document.body,
-              )}
+            {selectedDate && selectedSlot && !horariosOpen && (
+              <button
+                type="button"
+                onClick={() => setHorariosOpen(true)}
+                className="w-full text-left text-sm text-base-content/70 px-1 hover:text-base-content transition-colors"
+              >
+                📅 {formatFechaLegible(selectedDate)} ·{" "}
+                {selectedSlot.booking_time?.slice(0, 5)} hrs{" "}
+                <span className="underline">(cambiar)</span>
+              </button>
+            )}
 
-            {/* --- PASO 5: CIUDAD (vía Portal) --- */}
-            {sheetStep === "city" &&
-              createPortal(
-                <CityStep
-                  submitting={submitting}
-                  error={error}
-                  onNext={(cityVal) => {
-                    setSelectedCity(cityVal);
-                    setSheetStep("normas");
-                  }}
-                  onSkip={() => {
-                    setSelectedCity(null);
-                    setSheetStep("normas");
-                  }}
-                  onBack={() => setSheetStep("phone")}
-                />,
-                document.body,
-              )}
+            {/* RESUMEN DINÁMICO */}
+            {isChanged && selectedSlot && (
+              <div className="p-4 bg-neutral/5 border border-neutral/15 rounded-2xl">
+                <p className="text-sm font-medium text-base-content/80 leading-relaxed">
+                  Su tour se ha modificado para{" "}
+                  <span className="font-bold text-neutral">
+                    {numAdults} {numAdults === 1 ? "adulto" : "adultos"}
+                    {numMinors > 0 &&
+                      ` y ${numMinors} ${numMinors === 1 ? "niño" : "niños"}`}
+                  </span>{" "}
+                  el{" "}
+                  <span className="font-bold text-neutral">
+                    {formatFechaLegible(selectedDate)}
+                  </span>{" "}
+                  a las{" "}
+                  <span className="font-bold text-neutral">
+                    {selectedSlot.booking_time.slice(0, 5)} hrs
+                  </span>
+                  .
+                </p>
+              </div>
+            )}
 
-            {/* --- PASO 5.5: RESUMEN INTERMEDIO (vía Portal) --- */}
-            {sheetStep === "resumen" &&
-              createPortal(
-                <SuccessStep
-                  email={email}
-                  onClose={() => {
-                    handleConfirm(selectedCity);
-                  }}
-                />,
-                document.body,
+            {/* BOTÓN ÚNICO DE GUARDAR CAMBIOS */}
+            <button
+              type="button"
+              onClick={handleConfirmChanges}
+              disabled={!isChanged || !selectedSlot || submitting}
+              className={`btn w-full rounded-xl font-bold shadow-md transition-colors ${
+                isChanged && selectedSlot
+                  ? "btn-neutral text-white"
+                  : "bg-base-300 text-base-content/40 cursor-not-allowed border-none hover:bg-base-300"
+              }`}
+            >
+              {submitting ? (
+                <span className="loading loading-spinner" />
+              ) : (
+                "Guardar cambios"
               )}
-
-            {/* --- PASO 6: NORMAS DEL TOUR (vía Portal) --- */}
-            {sheetStep === "normas" &&
-              !submitting &&
-              createPortal(
-                <TermsStep
-                  onAccept={() => handleConfirm(selectedCity)}
-                  onBack={() => setSheetStep("city")}
-                  submitting={submitting}
-                />,
-                document.body,
-              )}
-
-            {/* --- OVERLAY DE CARGA (Mantiene la pantalla suave mientras se procesa la reserva) --- */}
-            {submitting &&
-              createPortal(
-                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
-                  <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 text-center max-w-xs mx-4">
-                    {/* Spinner animado con tu color corporativo */}
-                    <div className="w-10 h-10 border-4 border-[#8a3cb8]/25 border-t-[#8a3cb8] rounded-full animate-spin" />
-                    <p className="text-sm font-semibold text-gray-800">
-                      Confirmando tu reserva...
-                    </p>
-                  </div>
-                </div>,
-                document.body,
-              )}
-
-            {/* --- PASO 7: ÉXITO TOTAL (vía Portal) --- */}
-            {sheetStep === "exito" &&
-              createPortal(
-                <SuccessStep
-                  email={email}
-                  onClose={() => {
-                    onBooked?.(success);
-                    setSheetStep(null);
-                  }}
-                />,
-                document.body,
-              )}
-          </div>
+            </button>
+          </section>
         </div>
-      )}
-    </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
