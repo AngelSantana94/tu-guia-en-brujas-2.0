@@ -67,6 +67,30 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  const [serverOffsetMs, setServerOffsetMs] = useState(0);
+  const [nowTick, setNowTick] = useState(0);
+
+  // Calcula el desfase entre el reloj del servidor y el del dispositivo, una sola vez
+  useEffect(() => {
+    supabase.rpc("get_server_now").then(({ data, error }) => {
+      if (!error && data) {
+        const serverTime = new Date(data).getTime();
+        setServerOffsetMs(serverTime - Date.now());
+      }
+    });
+  }, []);
+
+  // Refresca la comprobación cada 30s para que los horarios se cierren solos
+  // sin que el usuario tenga que recargar la página
+  useEffect(() => {
+    const interval = setInterval(() => setNowTick((t) => t + 1), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  function getServerNow(offsetMs) {
+    return new Date(Date.now() + offsetMs);
+  }
+
   useEffect(() => {
     supabase.rpc("get_server_today").then(({ data, error }) => {
       if (error) {
@@ -107,8 +131,24 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
 
   const slotsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
-    return availability.filter((a) => a.booking_date === selectedDate);
-  }, [availability, selectedDate]);
+
+    const todayISO = today ? toISODate(today) : null;
+    const isSelectedToday = selectedDate === todayISO;
+    const now = getServerNow(serverOffsetMs);
+
+    return availability
+      .filter((a) => a.booking_date === selectedDate)
+      .map((slot) => {
+        let isPast = false;
+        if (isSelectedToday) {
+          const [h, m] = slot.booking_time.split(":").map(Number);
+          const slotDateTime = new Date(now);
+          slotDateTime.setHours(h, m, 0, 0);
+          isPast = slotDateTime <= now;
+        }
+        return { ...slot, isPast };
+      });
+  }, [availability, selectedDate, today, serverOffsetMs, nowTick]);
 
   function handleSelectDate(date) {
     if (!date || date < today) return;
@@ -378,19 +418,20 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
                 )}
                 {slotsForSelectedDate.map((slot) => {
                   const sinCupo = slot.remaining <= 0;
+                  const noDisponible = sinCupo || slot.isPast;
                   const isSelected =
                     selectedSlot?.schedule_id === slot.schedule_id;
                   return (
                     <button
                       type="button"
                       key={slot.schedule_id}
-                      disabled={sinCupo}
+                      disabled={noDisponible}
                       onClick={() => handleSelectSlot(slot)}
                       className={`btn ${btnSize} justify-between px-6 ${
                         isSelected
                           ? "btn-neutral shadow-md"
                           : "btn-outline border-base-300"
-                      } ${sinCupo ? "btn-disabled opacity-40" : ""}`}
+                      } ${noDisponible ? "btn-disabled opacity-40" : ""}`}
                     >
                       <span className="flex items-center gap-2 text-lg font-bold">
                         <img
@@ -401,9 +442,14 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
                         {slot.booking_time.slice(0, 5)}
                       </span>
 
-                      {sinCupo && (
+                      {sinCupo && !slot.isPast && (
                         <span className="text-xs uppercase tracking-wider text-error">
                           Agotado
+                        </span>
+                      )}
+                      {slot.isPast && (
+                        <span className="text-xs uppercase tracking-wider text-base-content/40">
+                          Finalizado
                         </span>
                       )}
                     </button>

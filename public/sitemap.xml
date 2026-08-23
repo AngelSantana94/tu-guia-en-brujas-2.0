@@ -3,34 +3,59 @@
 
   <url>
     <loc>https://tuguiaenbrujas.com/</loc>
-    <lastmod>2026-01-29T15:00:00+00:00</lastmod>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
     <priority>1.00</priority>
     <changefreq>weekly</changefreq>
   </url>
 
   <url>
+    <loc>https://tuguiaenbrujas.com/free-tour/</loc>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
+    <priority>0.90</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://tuguiaenbrujas.com/esencial-tour/</loc>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
+    <priority>0.90</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://tuguiaenbrujas.com/esencial-nocturno/</loc>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
+    <priority>0.90</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
     <loc>https://tuguiaenbrujas.com/privado-brujas/</loc>
-    <lastmod>2026-01-29T15:00:00+00:00</lastmod>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
     <priority>0.90</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://tuguiaenbrujas.com/privado-gante/</loc>
-    <lastmod>2026-01-29T15:00:00+00:00</lastmod>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
     <priority>0.90</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://tuguiaenbrujas.com/privado-amberes/</loc>
-    <lastmod>2026-01-29T15:00:00+00:00</lastmod>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
     <priority>0.90</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://tuguiaenbrujas.com/privado-bruselas/</loc>
-    <lastmod>2026-01-29T15:00:00+00:00</lastmod>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
     <priority>0.90</priority>
     <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://tuguiaenbrujas.com/about-us/</loc>
+    <lastmod>2026-08-22T15:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+    <changefreq>yearly</changefreq>
   </url>
 
   <url>

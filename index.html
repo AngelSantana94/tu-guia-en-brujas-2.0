@@ -1029,167 +1029,533 @@
               </button>
             </div>
 
-            <div
-              data-mega-cat-panel="free"
-              class="px-4 pb-6 grid grid-cols-1 gap-2"
-            >
+            <!-- PANEL: FREE TOURS -->
+            <div data-mega-cat-panel="free" class="p-4 grid grid-cols-1 gap-4">
               <a
                 href="/free-tour/"
                 data-drawer-close="mobile-tours"
-                class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors duration-200 no-underline!"
+                class="group flex flex-col gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all duration-300 no-underline!"
               >
-                <img
-                  src="/assets/img/brujas-freetour-hero.avif"
-                  alt="Free Tour Brujas Auténtica"
-                  class="w-16 h-16 rounded-lg object-cover shrink-0"
-                  loading="lazy"
-                />
-                <div class="min-w-0">
+                <div
+                  class="relative w-full h-36 rounded-xl overflow-hidden shrink-0"
+                >
+                  <img
+                    src="/assets/img/brujas-freetour-hero.avif"
+                    alt="Free Tour Brujas Auténtica"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
                   <span
-                    class="block font-semibold text-sm text-gray-900 truncate"
-                    >Brujas Auténtica</span
+                    class="block font-bold text-base text-gray-900 group-hover:text-[#8a3cb8] transition-colors truncate"
                   >
-                  <span class="block text-xs text-gray-500 truncate"
-                    >Libre aportación · 2h</span
+                    Free Tour por Brujas
+                  </span>
+
+                  <!-- DIV DE VALORACIÓN (5 ESTRELLAS DE PRUEBA) -->
+                  <div
+                    data-tour-stats="97d93dec-eac1-4e6f-b142-88de82eb28c7"
+                    class="flex items-center gap-2 mb-2"
+                  ></div>
+
+                  <!-- DESCRIPCIÓN -->
+                  <span class="block text-xs text-gray-500 line-clamp-2 mt-0.5">
+                    Descubre la historia, los canales y los rincones más mágicos
+                    del corazón medieval de Brujas.
+                  </span>
+
+                  <!-- PIE DE TARJETA CON PRECIO Y DURACIÓN -->
+                  <div
+                    class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between"
                   >
+                    <span
+                      class="inline-block bg-[#8a3cb8]/10 text-[#8a3cb8] text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider"
+                    >
+                      Libre aportación
+                    </span>
+                    <span
+                      class="text-xs font-semibold text-gray-500 flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 6v6l4 2"
+                        />
+                      </svg>
+                      2h
+                    </span>
+                  </div>
                 </div>
               </a>
             </div>
 
+            <!-- PANEL: ESENCIAL -->
             <div
               data-mega-cat-panel="esencial"
-              class="hidden px-4 pb-6 grid-cols-1 gap-2"
+              class="hidden p-4 grid grid-cols-1 gap-4"
             >
+              <!-- TOUR ESENCIAL -->
               <a
                 href="/esencial-tour/"
                 data-drawer-close="mobile-tours"
-                class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors duration-200 no-underline!"
+                class="group flex flex-col gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all duration-300 no-underline!"
               >
-                <img
-                  src="/assets/img/brujas-esencial-hero.avif"
-                  alt="Lo Esencial de Brujas"
-                  class="w-16 h-16 rounded-lg object-cover shrink-0"
-                  loading="lazy"
-                />
-                <div class="min-w-0">
+                <div
+                  class="relative w-full h-36 rounded-xl overflow-hidden shrink-0"
+                >
+                  <img
+                    src="/assets/img/brujas-esencial-hero.avif"
+                    alt="Lo Esencial de Brujas"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
                   <span
-                    class="block font-semibold text-sm text-gray-900 truncate"
-                    >Lo Esencial de Brujas</span
+                    class="block font-bold text-base text-gray-900 group-hover:text-[#8a3cb8] transition-colors truncate"
                   >
-                  <span class="block text-xs text-gray-500 truncate"
-                    >16€ · 2h</span
+                    Brujas Esencial
+                  </span>
+
+                  <!-- DIV DE VALORACIÓN (5 ESTRELLAS DE PRUEBA) -->
+                  <div
+                    data-tour-stats="031223db-2de0-4b7a-bb77-3d519e2d110e"
+                    class="flex items-center gap-2 mb-2"
+                  ></div>
+
+                  <!-- DESCRIPCIÓN -->
+                  <span class="block text-xs text-gray-500 line-clamp-2 mt-0.5">
+                    Un recorrido imprescindible para conocer los secretos mejor
+                    guardados y la historia de la ciudad.
+                  </span>
+
+                  <!-- PIE DE TARJETA -->
+                  <div
+                    class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between"
                   >
+                    <span
+                      class="inline-block bg-[#8a3cb8]/10 text-[#8a3cb8] text-[11px] font-bold px-2 py-1 rounded-md"
+                    >
+                      15€
+                    </span>
+                    <span
+                      class="text-xs font-semibold text-gray-500 flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 6v6l4 2"
+                        />
+                      </svg>
+                      2h
+                    </span>
+                  </div>
                 </div>
               </a>
+
+              <!-- BRUJAS DE NOCHE -->
               <a
-                href="/free-tour-nocturno/"
+                href="/esencial-nocturno/"
                 data-drawer-close="mobile-tours"
-                class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors duration-200 no-underline!"
+                class="group flex flex-col gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all duration-300 no-underline!"
               >
-                <img
-                  src="/assets/img/brujas-tour-nocturno-hero.avif"
-                  alt="Brujas de Noche"
-                  class="w-16 h-16 rounded-lg object-cover shrink-0"
-                  loading="lazy"
-                />
-                <div class="min-w-0">
+                <div
+                  class="relative w-full h-36 rounded-xl overflow-hidden shrink-0"
+                >
+                  <img
+                    src="/assets/img/brujas-tour-nocturno-hero.avif"
+                    alt="Brujas de Noche"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
                   <span
-                    class="block font-semibold text-sm text-gray-900 truncate"
-                    >Brujas de Noche</span
+                    class="block font-bold text-base text-gray-900 group-hover:text-[#8a3cb8] transition-colors truncate"
                   >
-                  <span class="block text-xs text-gray-500 truncate"
-                    >16€ · 2h</span
+                    Brujas de Noche
+                  </span>
+
+                  <!-- DIV DE VALORACIÓN (5 ESTRELLAS DE PRUEBA) -->
+                  <div
+                    data-tour-stats="3491aff2-5be5-4165-b340-4b04e692a194"
+                    class="flex items-center gap-2 mb-2"
+                  ></div>
+
+                  <!-- DESCRIPCIÓN -->
+                  <span class="block text-xs text-gray-500 line-clamp-2 mt-0.5">
+                    Disfruta de la magia bajo las estrellas. Leyendas, misterios
+                    y hermosos canales iluminados.
+                  </span>
+
+                  <!-- PIE DE TARJETA -->
+                  <div
+                    class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between"
                   >
+                    <span
+                      class="inline-block bg-[#8a3cb8]/10 text-[#8a3cb8] text-[11px] font-bold px-2 py-1 rounded-md"
+                    >
+                      15€
+                    </span>
+                    <span
+                      class="text-xs font-semibold text-gray-500 flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 6v6l4 2"
+                        />
+                      </svg>
+                      2h
+                    </span>
+                  </div>
                 </div>
               </a>
             </div>
 
+            <!-- PANEL: PRIVADOS -->
             <div
               data-mega-cat-panel="privado"
-              class="hidden px-4 pb-6 grid-cols-1 gap-2"
+              class="hidden p-4 grid grid-cols-1 gap-4"
             >
+              <!-- PRIVADO BRUJAS -->
               <a
                 href="/privado-brujas/"
                 data-drawer-close="mobile-tours"
-                class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors duration-200 no-underline!"
+                class="group flex flex-col gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all duration-300 no-underline!"
               >
-                <img
-                  src="/assets/img/brujas-privado-hero.avif"
-                  alt="Tour Privado en Brujas"
-                  class="w-16 h-16 rounded-lg object-cover shrink-0"
-                  loading="lazy"
-                />
-                <div class="min-w-0">
+                <div
+                  class="relative w-full h-36 rounded-xl overflow-hidden shrink-0"
+                >
+                  <img
+                    src="/assets/img/brujas-privado-hero.avif"
+                    alt="Tour Privado en Brujas"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
                   <span
-                    class="block font-semibold text-sm text-gray-900 truncate"
-                    >Brujas</span
+                    class="block font-bold text-base text-gray-900 group-hover:text-[#8a3cb8] transition-colors truncate"
                   >
-                  <span class="block text-xs text-gray-500 truncate"
-                    >160€ · grupo</span
+                    Tour Privado Brujas
+                  </span>
+
+                  <!-- DIV DE VALORACIÓN (5 ESTRELLAS DE PRUEBA) -->
+                  <div
+                    data-tour-stats="f6ae0514-8754-49f9-a48d-5c3bb5088f9a"
+                    class="flex items-center gap-2 mb-2"
+                  ></div>
+
+                  <!-- DESCRIPCIÓN -->
+                  <span class="block text-xs text-gray-500 line-clamp-2 mt-0.5">
+                    Exclusivo y a tu medida para disfrutar de la ciudad con un
+                    guía solo para ti y tu grupo.
+                  </span>
+
+                  <!-- PIE DE TARJETA -->
+                  <div
+                    class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between"
                   >
+                    <span
+                      class="inline-block bg-[#8a3cb8]/10 text-[#8a3cb8] text-[11px] font-bold px-2 py-1 rounded-md"
+                    >
+                      Prespuesto a Medida
+                    </span>
+                    <span
+                      class="text-xs font-semibold text-gray-500 flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                        />
+                        <circle cx="9" cy="7" r="4" stroke-width="2" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M23 21v-2a4 4 0 0 0-3-3.87"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M16 3.13a4 4 0 0 1 0 7.75"
+                        />
+                      </svg>
+                      Por grupo
+                    </span>
+                  </div>
                 </div>
               </a>
+
+              <!-- PRIVADO GANTE -->
               <a
                 href="/privado-gante/"
                 data-drawer-close="mobile-tours"
-                class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors duration-200 no-underline!"
+                class="group flex flex-col gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all duration-300 no-underline!"
               >
-                <img
-                  src="/assets/img/gante-privado-hero.avif"
-                  alt="Tour Privado en Gante"
-                  class="w-16 h-16 rounded-lg object-cover shrink-0"
-                  loading="lazy"
-                />
-                <div class="min-w-0">
+                <div
+                  class="relative w-full h-36 rounded-xl overflow-hidden shrink-0"
+                >
+                  <img
+                    src="/assets/img/gante-privado-hero.avif"
+                    alt="Tour Privado en Gante"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
                   <span
-                    class="block font-semibold text-sm text-gray-900 truncate"
-                    >Gante</span
+                    class="block font-bold text-base text-gray-900 group-hover:text-[#8a3cb8] transition-colors truncate"
                   >
-                  <span class="block text-xs text-gray-500 truncate"
-                    >160€ · grupo</span
+                    Tour Privado Gante
+                  </span>
+
+                  <!-- DIV DE VALORACIÓN (5 ESTRELLAS DE PRUEBA) -->
+                  <div
+                    data-tour-stats="429dc2a0-ee7a-411d-a05b-3d534e55091a"
+                    class="flex items-center gap-2 mb-2"
+                  ></div>
+
+                  <!-- DESCRIPCIÓN -->
+                  <span class="block text-xs text-gray-500 line-clamp-2 mt-0.5">
+                    Descubre la vibrante ciudad de Gante, su imponente castillo
+                    y su arquitectura medieval.
+                  </span>
+
+                  <!-- PIE DE TARJETA -->
+                  <div
+                    class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between"
                   >
+                    <span
+                      class="inline-block bg-[#8a3cb8]/10 text-[#8a3cb8] text-[11px] font-bold px-2 py-1 rounded-md"
+                    >
+                      Presupuesto a Medida
+                    </span>
+                    <span
+                      class="text-xs font-semibold text-gray-500 flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                        />
+                        <circle cx="9" cy="7" r="4" stroke-width="2" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M23 21v-2a4 4 0 0 0-3-3.87"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M16 3.13a4 4 0 0 1 0 7.75"
+                        />
+                      </svg>
+                      Por grupo
+                    </span>
+                  </div>
                 </div>
               </a>
+
+              <!-- PRIVADO AMBERES -->
               <a
                 href="/privado-amberes/"
                 data-drawer-close="mobile-tours"
-                class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors duration-200 no-underline!"
+                class="group flex flex-col gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all duration-300 no-underline!"
               >
-                <img
-                  src="/assets/img/amberes-privado-hero.avif"
-                  alt="Tour Privado en Amberes"
-                  class="w-16 h-16 rounded-lg object-cover shrink-0"
-                  loading="lazy"
-                />
-                <div class="min-w-0">
+                <div
+                  class="relative w-full h-36 rounded-xl overflow-hidden shrink-0"
+                >
+                  <img
+                    src="/assets/img/amberes-privado-hero.avif"
+                    alt="Tour Privado en Amberes"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
                   <span
-                    class="block font-semibold text-sm text-gray-900 truncate"
-                    >Amberes</span
+                    class="block font-bold text-base text-gray-900 group-hover:text-[#8a3cb8] transition-colors truncate"
                   >
-                  <span class="block text-xs text-gray-500 truncate"
-                    >160€ · grupo</span
+                    Tour Privado Amberes
+                  </span>
+
+                  <!-- DIV DE VALORACIÓN (5 ESTRELLAS DE PRUEBA) -->
+                  <div
+                    data-tour-stats="ac983b17-4386-40ee-b2b0-a9ca91d1ed64"
+                    class="flex items-center gap-2 mb-2"
+                  ></div>
+
+                  <!-- DESCRIPCIÓN -->
+                  <span class="block text-xs text-gray-500 line-clamp-2 mt-0.5">
+                    Arte, historia y la majestuosa estación central en un
+                    recorrido privado inolvidable.
+                  </span>
+
+                  <!-- PIE DE TARJETA -->
+                  <div
+                    class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between"
                   >
+                    <span
+                      class="inline-block bg-[#8a3cb8]/10 text-[#8a3cb8] text-[11px] font-bold px-2 py-1 rounded-md"
+                    >
+                      Presupuesto a Medida
+                    </span>
+                    <span
+                      class="text-xs font-semibold text-gray-500 flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                        />
+                        <circle cx="9" cy="7" r="4" stroke-width="2" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M23 21v-2a4 4 0 0 0-3-3.87"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M16 3.13a4 4 0 0 1 0 7.75"
+                        />
+                      </svg>
+                      Por grupo
+                    </span>
+                  </div>
                 </div>
               </a>
+
+              <!-- PRIVADO BRUSELAS -->
               <a
                 href="/privado-bruselas/"
                 data-drawer-close="mobile-tours"
-                class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors duration-200 no-underline!"
+                class="group flex flex-col gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all duration-300 no-underline!"
               >
-                <img
-                  src="/assets/img/bruselas-privado-hero.avif"
-                  alt="Tour Privado en Bruselas"
-                  class="w-16 h-16 rounded-lg object-cover shrink-0"
-                  loading="lazy"
-                />
-                <div class="min-w-0">
+                <div
+                  class="relative w-full h-36 rounded-xl overflow-hidden shrink-0"
+                >
+                  <img
+                    src="/assets/img/bruselas-privado-hero.avif"
+                    alt="Tour Privado en Bruselas"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
                   <span
-                    class="block font-semibold text-sm text-gray-900 truncate"
-                    >Bruselas</span
+                    class="block font-bold text-base text-gray-900 group-hover:text-[#8a3cb8] transition-colors truncate"
                   >
-                  <span class="block text-xs text-gray-500 truncate"
-                    >160€ · grupo</span
+                    Tour Privado Bruselas
+                  </span>
+
+                  <!-- DIV DE VALORACIÓN (5 ESTRELLAS DE PRUEBA) -->
+                  <div
+                    data-tour-stats="ccdbca20-2008-4f9f-910b-db38f8a4ee40"
+                    class="flex items-center gap-2 mb-2"
+                  ></div>
+
+                  <!-- DESCRIPCIÓN -->
+                  <span class="block text-xs text-gray-500 line-clamp-2 mt-0.5">
+                    Recorre la capital europea a tu ritmo con un itinerario 100%
+                    personalizado para ti y tu grupo.
+                  </span>
+
+                  <!-- PIE DE TARJETA -->
+                  <div
+                    class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between"
                   >
+                    <span
+                      class="inline-block bg-[#8a3cb8]/10 text-[#8a3cb8] text-[11px] font-bold px-2 py-1 rounded-md"
+                    >
+                      Presupuesto a Medida
+                    </span>
+                    <span
+                      class="text-xs font-semibold text-gray-500 flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                        />
+                        <circle cx="9" cy="7" r="4" stroke-width="2" />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M23 21v-2a4 4 0 0 0-3-3.87"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M16 3.13a4 4 0 0 1 0 7.75"
+                        />
+                      </svg>
+                      Por grupo
+                    </span>
+                  </div>
                 </div>
               </a>
             </div>
