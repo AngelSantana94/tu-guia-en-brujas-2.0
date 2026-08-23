@@ -66,9 +66,6 @@ export default function EditBookingModal({
   const [error, setError] = useState(null);
   const [horariosOpen, setHorariosOpen] = useState(false);
 
-  const totalPersonas = numAdults + numMinors;
-  const requierePrepago = tourSlug === "free-tour-brujas" && totalPersonas >= 5;
-
   const tourId =
     booking?.tour_id ??
     booking?.tourId ??
@@ -101,6 +98,9 @@ export default function EditBookingModal({
         }
       });
   }, [isOpen, tourId]);
+
+  const totalPersonas = numAdults + numMinors;
+  const requierePrepago = tourSlug === "free-tour-brujas" && totalPersonas >= 5;
 
   const originalTotalPersonas =
     (booking?.num_adults || 0) + (booking?.num_minors || 0);
