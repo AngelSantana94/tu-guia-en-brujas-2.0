@@ -290,7 +290,7 @@ export default function EditBookingModal({
     }
 
     // 📩 Invocar la Edge Function para enviar el email de edición
-    await supabase.functions.invoke("send-booking-email", {
+    await supabase.functions.invoke("send-reservation-update", {
       body: {
         action: "EDITED",
         record: {
