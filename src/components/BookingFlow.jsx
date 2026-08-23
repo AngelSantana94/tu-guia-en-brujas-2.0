@@ -468,6 +468,7 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
                     20,
                 );
                 const totalPersonas = numAdults + numMinors;
+                const requierePrepago = totalPersonas >= 5;
 
                 return (
                   <div className="space-y-5">
@@ -511,7 +512,7 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
                         <span className="font-semibold">
                           Menores{" "}
                           <span className="text-xs font-normal opacity-60">
-                            (hasta 15 años)
+                            (hasta 12 años)
                           </span>
                         </span>
                         <div className="flex items-center gap-4">
@@ -544,6 +545,21 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
                       Quedan disponibles {maxPlazas} plazas. Total seleccionado:{" "}
                       <span className="font-bold">{totalPersonas}</span>
                     </p>
+
+                    {/* AVISO PREPAGO DE GRUPOS */}
+                    {requierePrepago && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-1">
+                        <p className="font-bold">
+                          ⚠️ Aviso para grupos reducidos (5+ personas)
+                        </p>
+                        <p>
+                          Al ser un grupo de 5 o más asistentes (incluyendo
+                          niños), se requiere un prepago de{" "}
+                          <strong>15€ por persona</strong> que deberá abonarse
+                          al guía antes de comenzar el tour.
+                        </p>
+                      </div>
+                    )}
 
                     <button
                       type="button"

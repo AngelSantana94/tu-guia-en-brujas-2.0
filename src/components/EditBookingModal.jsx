@@ -47,16 +47,9 @@ export default function EditBookingModal({
   onClose,
   onUpdated,
 }) {
-  // ⚠️ IMPORTANTE: ya NO hacemos "return null" aquí arriba.
-  // Todos los hooks deben ejecutarse siempre, en el mismo orden,
-  // en cada render, independientemente de isOpen/booking.
-
-  // Estado del número de asistentes (con valores por defecto seguros
-  // por si "booking" todavía es null en el primer render)
   const [numAdults, setNumAdults] = useState(booking?.num_adults || 1);
   const [numMinors, setNumMinors] = useState(booking?.num_minors || 0);
 
-  // Fecha y horarios
   const [today, setToday] = useState(null);
   const [availability, setAvailability] = useState([]);
   const [selectedDate, setSelectedDate] = useState(
@@ -68,19 +61,14 @@ export default function EditBookingModal({
       : null,
   );
 
-  // Estados de control
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [assistantChangedNotice, setAssistantChangedNotice] = useState(false);
-  // Controla si el panel de horarios está tapando la caja del calendario
   const [horariosOpen, setHorariosOpen] = useState(false);
 
   const totalPersonas = numAdults + numMinors;
   const requierePrepago = totalPersonas >= 5;
 
-  // El tour_id puede venir con distintos nombres según el join que use tu
-  // consulta de reservas. Probamos varias rutas para no depender de una sola.
   const tourId =
     booking?.tour_id ??
     booking?.tourId ??
@@ -91,9 +79,6 @@ export default function EditBookingModal({
   const originalTotalPersonas =
     (booking?.num_adults || 0) + (booking?.num_minors || 0);
 
-  // Reiniciar el estado del formulario cada vez que se abre el modal
-  // o cambia la reserva que se está editando (el componente ya no se
-  // desmonta al cerrar, así que sin esto se quedaría con datos viejos).
   useEffect(() => {
     if (!isOpen || !booking) return;
 
@@ -105,9 +90,8 @@ export default function EditBookingModal({
       booking_time: booking.booking_time,
     });
     setError(null);
-  }, [isOpen, booking?.id]);
+  }, [isOpen, booking]);
 
-  // Cargar fecha servidor
   useEffect(() => {
     if (!isOpen) return;
 
@@ -128,12 +112,9 @@ export default function EditBookingModal({
     });
   }, [today]);
 
-  // Cargar disponibilidad
   useEffect(() => {
     if (!isOpen || !today || monthsList.length === 0) return;
 
-    // Si no logramos determinar el tour_id, NO nos quedamos colgados en
-    // "Cargando disponibilidad..." — avisamos y cortamos el loading.
     if (!tourId) {
       console.warn(
         "[EditBookingModal] No se encontró tour_id en el objeto booking:",
@@ -173,14 +154,11 @@ export default function EditBookingModal({
       });
   }, [isOpen, today, tourId, monthsList]);
 
-  // Horarios para el día seleccionado
   const slotsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
     return availability.filter((a) => a.booking_date === selectedDate);
   }, [availability, selectedDate]);
 
-  // Datos reales (con "remaining") del horario actualmente seleccionado,
-  // buscados dentro de la disponibilidad ya cargada.
   const currentSlotData = useMemo(() => {
     if (!selectedSlot || !selectedDate) return null;
     return (
@@ -192,16 +170,11 @@ export default function EditBookingModal({
     );
   }, [availability, selectedSlot, selectedDate]);
 
-  // ¿El horario elegido es el mismo que ya tenía la reserva original?
   const isSameSlotAsOriginal =
     !!booking &&
     selectedSlot?.schedule_id === booking.schedule_id &&
     selectedDate === booking.booking_date;
 
-  // Plazas máximas disponibles para esta edición. Si es el mismo horario
-  // que ya tenía la reserva, "devolvemos" las personas que ya ocupaba esa
-  // reserva antes de calcular el máximo (si no, nunca podrías reconfirmar
-  // la misma cantidad de gente que ya tenías).
   const maxPlazas = useMemo(() => {
     const baseRemaining =
       currentSlotData?.remaining ??
@@ -215,7 +188,6 @@ export default function EditBookingModal({
     return Math.min(MAX_PERSONAS_POR_GUIA, adjusted);
   }, [currentSlotData, isSameSlotAsOriginal, originalTotalPersonas]);
 
-  // Detectar si hubo algún cambio real respecto a la reserva original
   const isChanged = useMemo(() => {
     if (!booking) return false;
 
@@ -239,11 +211,6 @@ export default function EditBookingModal({
     setHorariosOpen(false);
   };
 
-  const handleCambiarAsistentes = () => {
-    setAssistantChangedNotice(true);
-    setTimeout(() => setAssistantChangedNotice(false), 3000);
-  };
-
   const formatFechaLegible = (dateStr) => {
     if (!dateStr) return "";
     const [year, month, day] = dateStr.split("-");
@@ -251,6 +218,7 @@ export default function EditBookingModal({
     return `${parseInt(day, 10)} de ${MESES[monthIndex]}`;
   };
 
+  // ✅ Handler unificado y acoplado directamente al botón final
   const handleConfirmChanges = async () => {
     if (!booking) return;
 
@@ -309,11 +277,13 @@ export default function EditBookingModal({
     onClose();
   };
 
-  // ✅ Ahora sí, el early return va DESPUÉS de todos los hooks.
   if (!isOpen || !booking) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-4">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-4"
+      data-theme="light"
+    >
       <div className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg bg-base-100 rounded-none md:rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         {/* Cabecera */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
@@ -390,7 +360,7 @@ export default function EditBookingModal({
                     Niños
                   </span>
                   <span className="text-xs text-base-content/50">
-                    (hasta 15 años)
+                    (hasta 12 años)
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -424,7 +394,6 @@ export default function EditBookingModal({
               </p>
             )}
 
-            {/* Aviso de prepago para grupos de 5 o más */}
             {requierePrepago && (
               <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-1">
                 <p className="font-bold">
@@ -437,20 +406,6 @@ export default function EditBookingModal({
                 </p>
               </div>
             )}
-
-            <button
-              type="button"
-              onClick={handleCambiarAsistentes}
-              className="btn btn-neutral w-auto px-6 rounded-xl text-white font-semibold"
-            >
-              Cambiar asistentes
-            </button>
-
-            {assistantChangedNotice && (
-              <p className="text-xs text-success font-medium">
-                ✓ Número de asistentes actualizado
-              </p>
-            )}
           </section>
 
           <hr className="border-base-200" />
@@ -461,9 +416,6 @@ export default function EditBookingModal({
               Elige un nuevo horario
             </h3>
 
-            {/* Caja del calendario: alto fijo, scroll interno para los meses.
-                El panel de horarios aparece ENCIMA de esta misma caja, tapando
-                los meses, con una X para volver. */}
             <div className="relative h-[40vh] min-h-[320px] rounded-2xl border border-base-200 overflow-hidden">
               {loading ? (
                 <div className="h-full flex items-center justify-center">
@@ -473,14 +425,12 @@ export default function EditBookingModal({
                 </div>
               ) : (
                 <div className="h-full overflow-y-auto p-4">
-                  {/* Días de la semana */}
                   <div className="sticky top-0 bg-base-100 grid grid-cols-7 text-center text-xs font-bold text-base-content/60 py-2 border-b border-base-200 z-[1]">
                     {DIAS.map((d) => (
                       <span key={d}>{d}</span>
                     ))}
                   </div>
 
-                  {/* Meses */}
                   {monthsList.map(({ year, month }) => (
                     <div key={`${year}-${month}`} className="mt-4">
                       <p className="font-extrabold text-base mb-3 capitalize text-neutral">
@@ -519,7 +469,6 @@ export default function EditBookingModal({
                 </div>
               )}
 
-              {/* Panel de horarios, tapa la caja del calendario */}
               {horariosOpen && selectedDate && (
                 <div className="absolute inset-0 bg-base-100 flex flex-col z-10">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-base-200 shrink-0">
@@ -591,7 +540,6 @@ export default function EditBookingModal({
               )}
             </div>
 
-            {/* Resumen corto de la fecha/hora elegida, para volver a abrir el panel */}
             {selectedDate && selectedSlot && !horariosOpen && (
               <button
                 type="button"
@@ -604,7 +552,7 @@ export default function EditBookingModal({
               </button>
             )}
 
-            {/* RESUMEN DINÁMICO: solo aparece cuando hay un cambio real */}
+            {/* RESUMEN DINÁMICO */}
             {isChanged && selectedSlot && (
               <div className="p-4 bg-neutral/5 border border-neutral/15 rounded-2xl">
                 <p className="text-sm font-medium text-base-content/80 leading-relaxed">
@@ -627,9 +575,7 @@ export default function EditBookingModal({
               </div>
             )}
 
-            {/* BOTÓN GUARDAR CAMBIOS: pegado justo debajo de la caja del calendario.
-                Gris/deshabilitado sin cambios, negro/activo en cuanto hay un
-                cambio real y un horario válido seleccionado. */}
+            {/* BOTÓN ÚNICO DE GUARDAR CAMBIOS */}
             <button
               type="button"
               onClick={handleConfirmChanges}
