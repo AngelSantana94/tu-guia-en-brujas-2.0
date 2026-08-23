@@ -1,55 +1,49 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import App from "./App";
 import HeaderAuth from "./components/HeaderAuth";
 import UserDashboard from "./components/UserDashboard";
 import MyReviews from "./components/MyReviews";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import EditarPerfil from "./components/EditarPerfil";
+import { inject } from "@vercel/analytics";
 import "/src/tailwind.css";
-import { Analytics } from "@vercel/analytics/react";
 
-// 1. Header
-const headerContainer = document.getElementById("header-auth-root");
-if (headerContainer) {
-  ReactDOM.createRoot(headerContainer).render(
-    <React.StrictMode>
-      <HeaderAuth />
-    </React.StrictMode>,
-  );
+// 1. Inicializar Vercel Analytics globalmente para todas las páginas
+inject();
+
+// Helper para montar componentes de forma segura (evita Error #299 y elementos nulos)
+function safeRender(id, element) {
+  const container = document.getElementById(id);
+  if (!container) return;
+
+  if (!container._reactRoot) {
+    container._reactRoot = ReactDOM.createRoot(container);
+  }
+  container._reactRoot.render(<React.StrictMode>{element}</React.StrictMode>);
 }
 
-// 2. Dashboard de Usuario (que dentro ya incluye las reservas)
-const dashboardContainer = document.getElementById("reservas-root"); // O #reservas-root
-if (dashboardContainer) {
-  ReactDOM.createRoot(dashboardContainer).render(
-    <React.StrictMode>
-      <ProtectedRoute>
-        <UserDashboard />
-      </ProtectedRoute>
-    </React.StrictMode>,
-  );
-}
+// 2. Header
+safeRender("header-auth-root", <HeaderAuth />);
 
-// 3. Mis Opiniones
-const opinionesContainer = document.getElementById("opiniones-root");
-if (opinionesContainer) {
-  ReactDOM.createRoot(opinionesContainer).render(
-    <React.StrictMode>
-      <ProtectedRoute>
-        <MyReviews />
-      </ProtectedRoute>
-    </React.StrictMode>,
-  );
-}
-
-const perfilRoot = document.getElementById("editar-perfil-root");
-if (perfilRoot) {
-  ReactDOM.createRoot(perfilRoot).render(<EditarPerfil />);
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-    <Analytics />
-  </React.StrictMode>,
+// 3. Dashboard de Usuario
+safeRender(
+  "reservas-root",
+  <ProtectedRoute>
+    <UserDashboard />
+  </ProtectedRoute>,
 );
+
+// 4. Mis Opiniones
+safeRender(
+  "opiniones-root",
+  <ProtectedRoute>
+    <MyReviews />
+  </ProtectedRoute>,
+);
+
+// 5. Editar Perfil
+safeRender("editar-perfil-root", <EditarPerfil />);
+
+// 6. Aplicación principal (solo si el HTML tiene id="root")
+safeRender("root", <App />);
