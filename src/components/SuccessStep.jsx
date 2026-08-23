@@ -4,7 +4,10 @@ import reservaConfirmada from "../assets/reserva-confirmada.jpeg";
 
 export default function SuccessStep({ email, onClose }) {
   return (
-    <div className="fixed inset-0 z-[9999] bg-base-100 flex flex-col w-full h-full overflow-y-auto">
+    <div
+      className="fixed inset-0 z-[9999] bg-base-100 flex flex-col w-full h-full overflow-y-auto"
+      data-theme="light"
+    >
       {/* FOTO CON DEGRADADO */}
       <div className="relative w-full h-64 sm:h-80 shrink-0 overflow-hidden rounded-t-3xl sm:max-w-md sm:mx-auto">
         <img

@@ -92,7 +92,10 @@ export default function CityStep({
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-base-100 flex flex-col w-full h-full overflow-y-auto">
+    <div
+      className="fixed inset-0 z-[10000] bg-base-100 flex flex-col w-full h-full overflow-y-auto"
+      data-theme="light"
+    >
       {error && (
         <p className="text-sm text-error bg-error/10 p-3 rounded-xl">{error}</p>
       )}

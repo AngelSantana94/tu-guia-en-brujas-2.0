@@ -8,6 +8,7 @@ export default function TermsStep({ onAccept, onBack, submitting }) {
     <div
       style={{ zIndex: 9999 }}
       className="fixed inset-0 bg-base-100 flex flex-col w-full h-dvh overflow-y-auto"
+      data-theme="light"
     >
       {/* Header idéntico al del paso "Tus datos" */}
       <div className="flex items-center justify-between p-4 shrink-0">

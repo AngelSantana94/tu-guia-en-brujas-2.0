@@ -410,7 +410,7 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
           <div className="p-5 overflow-y-auto overscroll-contain flex-1 pb-safe">
             {/* --- PASO 1: HORARIOS --- */}
             {sheetStep === "horarios" && (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col gap-3">
                 {slotsForSelectedDate.length === 0 && (
                   <p className="text-center text-base-content/50 py-10">
                     No hay horarios disponibles para este día.
@@ -559,7 +559,10 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
             {/* PASO 3: DATOS VIA PORTAL */}
             {sheetStep === "datos" &&
               createPortal(
-                <div className="fixed inset-0 z-[9999] bg-base-100 flex flex-col w-full h-full overflow-y-auto">
+                <div
+                  className="fixed inset-0 z-[9999] bg-base-100 flex flex-col w-full h-full overflow-y-auto"
+                  data-theme="light"
+                >
                   <div className="flex items-center justify-between p-4 shrink-0">
                     <button
                       type="button"
