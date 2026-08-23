@@ -6,6 +6,7 @@ import MyReviews from "./components/MyReviews";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import EditarPerfil from "./components/EditarPerfil";
 import "/src/tailwind.css";
+import { Analytics } from "@vercel/analytics/react";
 
 // 1. Header
 const headerContainer = document.getElementById("header-auth-root");
@@ -45,3 +46,10 @@ const perfilRoot = document.getElementById("editar-perfil-root");
 if (perfilRoot) {
   ReactDOM.createRoot(perfilRoot).render(<EditarPerfil />);
 }
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+    <Analytics />
+  </React.StrictMode>,
+);

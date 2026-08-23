@@ -24,7 +24,6 @@ import { initTourStats } from "./modules/tourStats.js";
 
 import { initTourReviews } from "./modules/tourReviews.js";
 
-import { Analytics } from '@vercel/analytics/react';
 
 // ============================================
 // ICONOS
@@ -285,9 +284,4 @@ document.addEventListener("DOMContentLoaded", () => {
   initTourReviews();
 });
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-    <Analytics />
-  </React.StrictMode>
-);
+
