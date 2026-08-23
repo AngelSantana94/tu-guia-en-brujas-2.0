@@ -21,6 +21,32 @@ const MESES = [
 const MESES_A_MOSTRAR = 6;
 const MAX_PERSONAS_POR_GUIA = 20;
 
+const [tourName, setTourName] = useState(null);
+const [tourSlug, setTourSlug] = useState(null);
+
+useEffect(() => {
+  if (!isOpen || !tourId) return;
+
+  supabase
+    .from("tours")
+    .select("name, slug")
+    .eq("id", tourId)
+    .single()
+    .then(({ data, error }) => {
+      if (error) {
+        console.error(
+          "[EditBookingModal] error al obtener datos del tour:",
+          error,
+        );
+        setTourName(null);
+        setTourSlug(null);
+      } else {
+        setTourName(data?.name || null);
+        setTourSlug(data?.slug || null);
+      }
+    });
+}, [isOpen, tourId]);
+
 function toISODate(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -67,7 +93,7 @@ export default function EditBookingModal({
   const [horariosOpen, setHorariosOpen] = useState(false);
 
   const totalPersonas = numAdults + numMinors;
-  const requierePrepago = totalPersonas >= 5;
+  const requierePrepago = tourSlug === "free-tour-brujas" && totalPersonas >= 5;
 
   const tourId =
     booking?.tour_id ??
@@ -246,11 +272,10 @@ export default function EditBookingModal({
       p_num_minors: numMinors,
     });
 
-    setSubmitting(false);
-
     if (error) {
       console.error("[EditBookingModal] update_booking error:", error);
       setError("Ha ocurrido un error al modificar la reserva");
+      setSubmitting(false);
       return;
     }
 
@@ -260,8 +285,28 @@ export default function EditBookingModal({
           ? `Solo quedan ${data.remaining} plazas, por favor ajusta la cantidad.`
           : data?.message || "No se pudo completar la reserva",
       );
+      setSubmitting(false);
       return;
     }
+
+    // 📩 Invocar la Edge Function para enviar el email de edición
+    await supabase.functions.invoke("send-booking-email", {
+      body: {
+        action: "EDITED",
+        record: {
+          tour_name: tourName,
+          customer_name: booking.customer_name,
+          email: booking.email,
+          phone: booking.phone || null,
+          booking_date: selectedDate,
+          booking_time: selectedSlot.booking_time,
+          num_adults: numAdults,
+          num_minors: numMinors,
+        },
+      },
+    });
+
+    setSubmitting(false);
 
     if (onUpdated) {
       onUpdated({

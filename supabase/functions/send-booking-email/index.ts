@@ -159,17 +159,18 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: "Sistema de Reservas <info@tuguiaenbrujas.com>",
         to: ["tuguiaenbrujas@gmail.com"],
-        subject: `Nueva reserva: ${record.customer_name}`,
+        subject: `Nueva reserva: ${tourTitle} - ${record.customer_name}`,
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2>Nueva reserva recibida</h2>
-            <p><strong>Cliente:</strong> ${record.customer_name}</p>
-            <p><strong>Email:</strong> ${record.email}</p>
-            <p><strong>Teléfono:</strong> ${record.phone || "No facilitado"}</p>
-            <p><strong>Fecha y Hora:</strong> ${record.booking_date} a las ${record.booking_time}</p>
-            <p><strong>Plazas:</strong> ${record.num_adults} Adultos / ${record.num_minors} Niños</p>
-          </div>
-        `,
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Nueva reserva recibida</h2>
+        <p><strong>Tour:</strong> ${tourTitle}</p>
+        <p><strong>Cliente:</strong> ${record.customer_name}</p>
+        <p><strong>Email:</strong> ${record.email}</p>
+        <p><strong>Teléfono:</strong> ${record.phone || "No facilitado"}</p>
+        <p><strong>Fecha y Hora:</strong> ${record.booking_date} a las ${record.booking_time}</p>
+        <p><strong>Plazas:</strong> ${record.num_adults} Adultos / ${record.num_minors} Niños</p>
+      </div>
+    `,
       }),
     });
 

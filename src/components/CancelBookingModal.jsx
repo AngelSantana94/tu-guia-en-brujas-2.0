@@ -24,41 +24,27 @@ export default function CancelBookingModal({
   onClose,
   onCancelled,
 }) {
-  const [step, setStep] = useState(1);
   const [selectedReason, setSelectedReason] = useState(null);
   const [otherNote, setOtherNote] = useState("");
-  const [emailInput, setEmailInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   // Reiniciar el formulario al abrir
   useEffect(() => {
     if (!isOpen) return;
-    setStep(1);
     setSelectedReason(null);
     setOtherNote("");
-    setEmailInput("");
     setError(null);
   }, [isOpen, booking?.id]);
 
   if (!isOpen || !booking) return null;
 
-  const expectedEmail = (booking?.email || booking?.customer_email || "")
-    .trim()
-    .toLowerCase();
-
   const isOtro = selectedReason === "otro";
-  const canGoToStep2 =
+  const canConfirm =
     !!selectedReason && (!isOtro || otherNote.trim().length > 0);
 
-  const isEmailMatching =
-    emailInput.trim().toLowerCase() === expectedEmail && expectedEmail !== "";
-
   const handleConfirm = async () => {
-    if (!isEmailMatching) {
-      setError("El correo ingresado no coincide con el de la reserva.");
-      return;
-    }
+    if (!canConfirm) return;
 
     setSubmitting(true);
     setError(null);
@@ -73,11 +59,10 @@ export default function CancelBookingModal({
       .eq("id", booking.id)
       .select();
 
-    setSubmitting(false);
-
     if (dbError) {
       console.error("[CancelBookingModal] error al cancelar:", dbError);
       setError("No se pudo cancelar la reserva. Inténtalo de nuevo.");
+      setSubmitting(false);
       return;
     }
 
@@ -85,8 +70,39 @@ export default function CancelBookingModal({
       setError(
         "No se pudo cancelar la reserva (permisos insuficientes). Contacta con soporte.",
       );
+      setSubmitting(false);
       return;
     }
+
+    // 📩 Obtener el nombre del tour para el email
+    let tourName = null;
+    if (booking.tour_id) {
+      const { data: tourData } = await supabase
+        .from("tours")
+        .select("name")
+        .eq("id", booking.tour_id)
+        .single();
+      tourName = tourData?.name || null;
+    }
+
+    // 📩 Invocar la Edge Function para enviar el email de cancelación
+    await supabase.functions.invoke("send-booking-email", {
+      body: {
+        action: "CANCELLED",
+        record: {
+          tour_name: tourName,
+          customer_name: booking.customer_name,
+          email: booking.email,
+          phone: booking.phone || null,
+          booking_date: booking.booking_date,
+          booking_time: booking.booking_time,
+          num_adults: booking.num_adults,
+          num_minors: booking.num_minors,
+        },
+      },
+    });
+
+    setSubmitting(false);
 
     if (onCancelled) {
       onCancelled({
@@ -109,45 +125,26 @@ export default function CancelBookingModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
           <button
             type="button"
-            onClick={step === 2 ? () => setStep(1) : onClose}
+            onClick={onClose}
             className="btn btn-ghost btn-circle btn-sm bg-base-200/60"
-            aria-label={step === 2 ? "Volver" : "Cerrar"}
+            aria-label="Cerrar"
           >
-            {step === 2 ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2.5"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2.5"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            )}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
-          <span className="font-bold text-lg">
-            {step === 1 ? "Cancelar reserva" : "Confirmar email"}
-          </span>
+          <span className="font-bold text-lg">Cancelar reserva</span>
           <div className="w-8" />
         </div>
 
@@ -159,124 +156,63 @@ export default function CancelBookingModal({
             </div>
           )}
 
-          {step === 1 && (
-            <>
-              <h3 className="text-xl font-extrabold text-base-content">
-                ¿Por qué quieres cancelar tu reserva?
-              </h3>
+          <h3 className="text-xl font-extrabold text-base-content">
+            ¿Por qué quieres cancelar tu reserva?
+          </h3>
 
-              <div className="flex flex-col divide-y divide-base-200 border-y border-base-200">
-                {MOTIVOS.map((motivo) => {
-                  const isSelected = selectedReason === motivo.key;
-                  return (
-                    <label
-                      key={motivo.key}
-                      className="flex items-center gap-4 py-4 cursor-pointer select-none"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() =>
-                          setSelectedReason(isSelected ? null : motivo.key)
-                        }
-                        className="checkbox checkbox-sm rounded-md border-2 border-base-300 [--chkbg:theme(colors.neutral)] [--chkfg:white]"
-                      />
-                      <span className="text-sm text-base-content leading-snug">
-                        {motivo.label}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-
-              {isOtro && (
-                <textarea
-                  value={otherNote}
-                  onChange={(e) => setOtherNote(e.target.value)}
-                  placeholder="Cuéntanos brevemente el motivo..."
-                  rows={3}
-                  className="textarea textarea-bordered w-full rounded-xl text-sm"
-                />
-              )}
-            </>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4 py-2">
-              <h3 className="text-xl font-extrabold text-base-content">
-                Verifica tu correo electrónico
-              </h3>
-
-              <p className="text-sm text-base-content/70 leading-relaxed">
-                Para confirmar la cancelación, introduce la dirección de correo
-                electrónico asociada a esta reserva.
-              </p>
-
-              <div className="space-y-2 pt-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-                  Email de la reserva
+          <div className="flex flex-col divide-y divide-base-200 border-y border-base-200">
+            {MOTIVOS.map((motivo) => {
+              const isSelected = selectedReason === motivo.key;
+              return (
+                <label
+                  key={motivo.key}
+                  className="flex items-center gap-4 py-4 cursor-pointer select-none"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() =>
+                      setSelectedReason(isSelected ? null : motivo.key)
+                    }
+                    className="checkbox checkbox-sm rounded-md border-2 border-base-300 [--chkbg:theme(colors.neutral)] [--chkfg:white]"
+                  />
+                  <span className="text-sm text-base-content leading-snug">
+                    {motivo.label}
+                  </span>
                 </label>
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => {
-                    setEmailInput(e.target.value);
-                    if (error) setError(null);
-                  }}
-                  placeholder="ejemplo@correo.com"
-                  className={`input input-bordered w-full rounded-xl text-sm ${
-                    emailInput.length > 0 && !isEmailMatching
-                      ? "input-error"
-                      : ""
-                  }`}
-                  autoFocus
-                />
-                {emailInput.length > 0 && !isEmailMatching && (
-                  <p className="text-xs text-error font-medium">
-                    El correo no coincide con el de la reserva.
-                  </p>
-                )}
-              </div>
-            </div>
+              );
+            })}
+          </div>
+
+          {isOtro && (
+            <textarea
+              value={otherNote}
+              onChange={(e) => setOtherNote(e.target.value)}
+              placeholder="Cuéntanos brevemente el motivo..."
+              rows={3}
+              className="textarea textarea-bordered w-full rounded-xl text-sm"
+            />
           )}
         </div>
 
-        {/* Botón inferior dinámico */}
+        {/* Botón inferior */}
         <div className="p-4 border-t border-base-200 shrink-0">
-          {step === 1 ? (
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setStep(2);
-              }}
-              disabled={!canGoToStep2}
-              className={`btn w-full rounded-xl font-bold shadow-md transition-colors ${
-                canGoToStep2
-                  ? "btn-neutral text-white"
-                  : "bg-base-300 text-base-content/40 cursor-not-allowed border-none hover:bg-base-300"
-              }`}
-            >
-              Continuar
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={!isEmailMatching || submitting}
-              className={`btn w-full rounded-xl font-bold shadow-md transition-colors ${
-                isEmailMatching
-                  ? "btn-neutral text-white"
-                  : "bg-base-300 text-base-content/40 cursor-not-allowed border-none hover:bg-base-300"
-              }`}
-            >
-              {submitting ? (
-                <span className="loading loading-spinner" />
-              ) : (
-                "Confirmar cancelación"
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={!canConfirm || submitting}
+            className={`btn w-full rounded-xl font-bold shadow-md transition-colors ${
+              canConfirm
+                ? "btn-neutral text-white"
+                : "bg-base-300 text-base-content/40 cursor-not-allowed border-none hover:bg-base-300"
+            }`}
+          >
+            {submitting ? (
+              <span className="loading loading-spinner" />
+            ) : (
+              "Confirmar cancelación"
+            )}
+          </button>
         </div>
       </div>
     </div>,

@@ -249,6 +249,7 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
     await supabase.functions.invoke("send-booking-email", {
       body: {
         record: {
+          tour_name: tour.name,
           customer_name: customerName,
           email: email,
           phone: phone || null,
@@ -468,7 +469,8 @@ export default function BookingFlow({ tour, onBooked, size = "sm" }) {
                     20,
                 );
                 const totalPersonas = numAdults + numMinors;
-                const requierePrepago = totalPersonas >= 5;
+                const requierePrepago =
+                  tour?.slug === "free-tour-brujas" && totalPersonas >= 5;
 
                 return (
                   <div className="space-y-5">
