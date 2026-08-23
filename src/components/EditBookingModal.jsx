@@ -21,32 +21,6 @@ const MESES = [
 const MESES_A_MOSTRAR = 6;
 const MAX_PERSONAS_POR_GUIA = 20;
 
-const [tourName, setTourName] = useState(null);
-const [tourSlug, setTourSlug] = useState(null);
-
-useEffect(() => {
-  if (!isOpen || !tourId) return;
-
-  supabase
-    .from("tours")
-    .select("name, slug")
-    .eq("id", tourId)
-    .single()
-    .then(({ data, error }) => {
-      if (error) {
-        console.error(
-          "[EditBookingModal] error al obtener datos del tour:",
-          error,
-        );
-        setTourName(null);
-        setTourSlug(null);
-      } else {
-        setTourName(data?.name || null);
-        setTourSlug(data?.slug || null);
-      }
-    });
-}, [isOpen, tourId]);
-
 function toISODate(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -101,6 +75,32 @@ export default function EditBookingModal({
     booking?.tour?.id ??
     booking?.tours?.id ??
     null;
+
+  const [tourName, setTourName] = useState(null);
+  const [tourSlug, setTourSlug] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || !tourId) return;
+
+    supabase
+      .from("tours")
+      .select("name, slug")
+      .eq("id", tourId)
+      .single()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(
+            "[EditBookingModal] error al obtener datos del tour:",
+            error,
+          );
+          setTourName(null);
+          setTourSlug(null);
+        } else {
+          setTourName(data?.name || null);
+          setTourSlug(data?.slug || null);
+        }
+      });
+  }, [isOpen, tourId]);
 
   const originalTotalPersonas =
     (booking?.num_adults || 0) + (booking?.num_minors || 0);
