@@ -86,21 +86,38 @@ export default function CancelBookingModal({
     }
 
     // 📩 Invocar la Edge Function para enviar el email de cancelación
-    await supabase.functions.invoke("send-booking-email", {
-      body: {
-        action: "CANCELLED",
-        record: {
-          tour_name: tourName,
-          customer_name: booking.customer_name,
-          email: booking.email,
-          phone: booking.phone || null,
-          booking_date: booking.booking_date,
-          booking_time: booking.booking_time,
-          num_adults: booking.num_adults,
-          num_minors: booking.num_minors,
+    const { error: emailError } = await supabase.functions.invoke(
+      "send-reservation-update",
+      {
+        body: {
+          action: "CANCELLED",
+          record: {
+            tour_name: tourName,
+            customer_name: booking.customer_name,
+            email: booking.email,
+            phone: booking.phone || null,
+            booking_date: booking.booking_date,
+            booking_time: booking.booking_time,
+            num_adults: booking.num_adults,
+            num_minors: booking.num_minors,
+          },
         },
       },
-    });
+    );
+
+    if (emailError) {
+      console.error(
+        "[CancelBookingModal] error al invocar send-reservation-update:",
+        emailError,
+      );
+    }
+
+    if (emailError) {
+      console.error(
+        "[CancelBookingModal] error al invocar send-reservation-update:",
+        emailError,
+      );
+    }
 
     setSubmitting(false);
 

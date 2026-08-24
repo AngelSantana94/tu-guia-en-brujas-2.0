@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
                   <ul style="padding-left: 0; list-style: none; margin: 0; font-size: 15px;">
                     <li style="margin-bottom: 8px;"><strong>Tour:</strong> ${tourTitle}</li>
                     <li style="margin-bottom: 8px;"><strong>Fecha:</strong> ${record.booking_date}</li>
-                    <li style="margin-bottom: 8px;"><strong>Hora:</strong> ${record.booking_time}</li>
+                    <li style="margin-bottom: 8px;"><strong>Hora:</strong> ${record.booking_time?.slice(0, 5)}</li>
                     <li style="margin-bottom: 8px;"><strong>Idioma:</strong> Español</li>
                     <li style="margin-bottom: 8px;"><strong>Titular:</strong> ${record.customer_name}</li>
                     <li style="margin-bottom: 8px;"><strong>Plazas:</strong> ${totalPersons} persona(s) (${record.num_adults || 0} adultos, ${record.num_minors || 0} niños)</li>
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
         <p><strong>Cliente:</strong> ${record.customer_name}</p>
         <p><strong>Email:</strong> ${record.email}</p>
         <p><strong>Teléfono:</strong> ${record.phone || "No facilitado"}</p>
-        <p><strong>Fecha y Hora:</strong> ${record.booking_date} a las ${record.booking_time}</p>
+        <p style="margin: 6px 0;"><strong>Fecha y Hora:</strong> ${record.booking_date} a las ${record.booking_time?.slice(0, 5)}</p>
         <p><strong>Plazas:</strong> ${record.num_adults} Adultos / ${record.num_minors} Niños</p>
       </div>
     `,

@@ -29,22 +29,24 @@ export default function MyBookings() {
         .from("bookings")
         .select(
           `
-          id,
-          tour_id,
-          schedule_id,
-          status,
-          attended,
-          booking_date,
-          booking_time,
-          num_adults,
-          num_minors,
-          email,
-          tours (
-            id,
-            name,
-            image_url
-          )
-        `,
+              id,
+              tour_id,
+              schedule_id,
+              status,
+              attended,
+              booking_date,
+              booking_time,
+              num_adults,
+              num_minors,
+              email,
+              customer_name,
+              phone,
+              tours (
+                id,
+                name,
+                image_url
+              )
+            `,
         )
         .eq("email", user.email)
         .order("booking_date", { ascending: false });
