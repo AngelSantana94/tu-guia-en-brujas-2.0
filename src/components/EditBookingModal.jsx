@@ -19,7 +19,6 @@ const MESES = [
   "Diciembre",
 ];
 const MESES_A_MOSTRAR = 6;
-const MAX_PERSONAS_POR_GUIA = 20;
 
 function toISODate(date) {
   const y = date.getFullYear();
@@ -75,13 +74,15 @@ export default function EditBookingModal({
 
   const [tourName, setTourName] = useState(null);
   const [tourSlug, setTourSlug] = useState(null);
+  const [maxCapacity, setMaxCapacity] = useState(30);
 
+  // 1. Obtener datos del tour (incluyendo capacidad máxima)
   useEffect(() => {
     if (!isOpen || !tourId) return;
 
     supabase
       .from("tours")
-      .select("name, slug")
+      .select("name, slug, max_capacity")
       .eq("id", tourId)
       .single()
       .then(({ data, error }) => {
@@ -95,6 +96,9 @@ export default function EditBookingModal({
         } else {
           setTourName(data?.name || null);
           setTourSlug(data?.slug || null);
+          if (data?.max_capacity) {
+            setMaxCapacity(data.max_capacity);
+          }
         }
       });
   }, [isOpen, tourId]);
@@ -201,18 +205,29 @@ export default function EditBookingModal({
     selectedSlot?.schedule_id === booking.schedule_id &&
     selectedDate === booking.booking_date;
 
+  // Capacidad del slot en particular o fallback al maxCapacity del tour
+  const slotMaxCapacity =
+    currentSlotData?.max_capacity ??
+    currentSlotData?.total_capacity ??
+    maxCapacity;
+
   const maxPlazas = useMemo(() => {
     const baseRemaining =
       currentSlotData?.remaining ??
       currentSlotData?.available_spots ??
-      MAX_PERSONAS_POR_GUIA;
+      slotMaxCapacity;
 
     const adjusted = isSameSlotAsOriginal
       ? baseRemaining + originalTotalPersonas
       : baseRemaining;
 
-    return Math.min(MAX_PERSONAS_POR_GUIA, adjusted);
-  }, [currentSlotData, isSameSlotAsOriginal, originalTotalPersonas]);
+    return Math.min(slotMaxCapacity, adjusted);
+  }, [
+    currentSlotData,
+    isSameSlotAsOriginal,
+    originalTotalPersonas,
+    slotMaxCapacity,
+  ]);
 
   const isChanged = useMemo(() => {
     if (!booking) return false;
@@ -244,7 +259,6 @@ export default function EditBookingModal({
     return `${parseInt(day, 10)} de ${MESES[monthIndex]}`;
   };
 
-  // ✅ Handler unificado y acoplado directamente al botón final
   const handleConfirmChanges = async () => {
     if (!booking) return;
 
@@ -289,7 +303,6 @@ export default function EditBookingModal({
       return;
     }
 
-    // 📩 Invocar la Edge Function para enviar el email de edición
     await supabase.functions.invoke("send-reservation-update", {
       body: {
         action: "EDITED",
@@ -551,7 +564,17 @@ export default function EditBookingModal({
                         </p>
                       ) : (
                         slotsForSelectedDate.map((slot) => {
-                          const sinCupo = slot.remaining <= 0;
+                          // Si es el slot original de esta reserva, le sumamos las plazas que ya tiene reservadas
+                          const isOriginalSlot =
+                            booking &&
+                            slot.schedule_id === booking.schedule_id &&
+                            selectedDate === booking.booking_date;
+
+                          const realRemaining = isOriginalSlot
+                            ? slot.remaining + originalTotalPersonas
+                            : slot.remaining;
+
+                          const sinCupo = realRemaining <= 0;
                           const isSelected =
                             selectedSlot?.schedule_id === slot.schedule_id;
 

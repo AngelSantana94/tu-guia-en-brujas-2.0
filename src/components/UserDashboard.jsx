@@ -29,26 +29,28 @@ export default function UserDashboard() {
         const { data, error: dbError } = await supabase
           .from("bookings")
           .select(
-          `
-              id,
-              tour_id,
-              schedule_id,
-              status,
-              attended,
-              booking_date,
-              booking_time,
-              num_adults,
-              num_minors,
-              email,
-              customer_name,
-              phone,
-              tours (
-                id,
-                name,
-                image_url
-              )
-            `,
-        )
+            `
+    id,
+    tour_id,
+    schedule_id,
+    status,
+    booking_date,
+    booking_time,
+    num_adults,
+    num_minors,
+    email,
+    customer_name,
+    phone,
+    tours (
+      id,
+      name,
+      slug,
+      meeting_point,
+      duration_minutes,
+      image_url
+    )
+  `,
+          )
           .eq("email", user.email)
           .order("booking_date", { ascending: false });
 
